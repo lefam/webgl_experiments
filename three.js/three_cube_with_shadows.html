@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+
+  <script type="text/javascript" src="../lib/Stats.js"></script>
+  <script type="text/javascript" src="../lib/Three.js"></script>
+  <script type="text/javascript" src="../lib/requestAnimFrame.js"></script>
+
+  <script type="text/javascript">
+    var renderer, scene, cube, camera, stats;
+
+    window.onload = function() {
+      init();
+    }
+
+    window.onresize = function() {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function init() {
+      stats = new Stats();
+      stats.getDomElement().style.position = "absolute";
+      stats.getDomElement().style.right = "20%";
+      stats.getDomElement().style.top = "5%";
+      document.body.appendChild(stats.getDomElement());
+      
+      renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      document.body.appendChild(renderer.domElement);
+      renderer.setClearColorHex(0x000000, 1.0);
+
+      var aspectRatio = window.innerWidth / window.innerHeight;
+
+      camera = new THREE.PerspectiveCamera(60, aspectRatio, 1, 10000.0);
+      camera.position.z = 200;
+
+      scene = new THREE.Scene();
+
+      var materials = [
+        new THREE.MeshLambertMaterial({color: 0xff0000, ambient: 0xffffff}),
+        new THREE.MeshLambertMaterial({color: 0x00ff00, ambient: 0xffffff}),
+        new THREE.MeshLambertMaterial({color: 0x0000ff, ambient: 0xffffff}),
+        new THREE.MeshLambertMaterial({color: 0xff0000, ambient: 0xffffff}),
+        new THREE.MeshLambertMaterial({color: 0xff0000, ambient: 0xffffff}),
+        new THREE.MeshLambertMaterial({color: 0xff0000, ambient: 0xffffff})
+      ];
+        
+      
+      cube = new THREE.Mesh( new THREE.CubeGeometry(40, 40, 40), new THREE.MeshLambertMaterial({color: 0x00ff00, ambient: 0xffffff}));
+      //cube = new THREE.Mesh( new THREE.CubeGeometry(40, 40, 40), materials);
+      scene.add(cube);
+      cube.castShadow = true;
+
+      plane = new THREE.Mesh( new THREE.PlaneGeometry(170,170), new THREE.MeshLambertMaterial({color: 0xcccccc, ambient: 0xaaaaaa}));
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.y = -50;
+      scene.add(plane);
+      plane.receiveShadow = true;
+
+      var ambientLight = new THREE.AmbientLight(0xaaaaaa);
+      scene.add(ambientLight);
+
+      // create a point light
+      //var pointLight = new THREE.DirectionalLight( 0xFFFFFF );
+      var pointLight = new THREE.SpotLight( 0xeeeeee );
+      pointLight.castShadow = true;
+      // set its position
+      pointLight.position.x = 0;
+      pointLight.position.y = 350;
+      pointLight.position.z = 0;
+      //pointLight.position.normalize()
+
+      //renderer.shadowMapWidth = 1024;
+      //renderer.shadowMapHeight = 1024;
+      //renderer.shadowCameraFov = 50;
+      renderer.shadowMapEnabled = true;
+
+      // add to the scene
+      scene.add(pointLight);
+
+      loop();
+    }
+
+    function loop() {
+      requestAnimFrame(loop);
+      render();
+    }
+    
+    function render() {
+      stats.update();
+      cube.rotation.y += 0.01;
+      cube.rotation.x += 0.01;
+      //renderer.clear();
+      renderer.render(scene, camera);
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Three.js multicolored cube</title>
+
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+
+  <script type="text/javascript" src="../lib/Three.js"></script>
+  <script type="text/javascript" src="../lib/Stats.js"></script>
+  <script type="text/javascript" src="../lib/requestAnimFrame.js"></script>
+  <script type="text/javascript">
+    // TODO: Remove cubeMesh and all its dependencies
+    var renderer, scene, camera, controls, cubeGeo, cubeMesh, cubeMeshes;
+    var lastTime, stats, clock;
+    var keys = new Array(256);
+    
+    CUBE_SIZE  = 30;
+    MAP_WIDTH  = 16 * CUBE_SIZE;
+    MAP_HEIGHT = 16 * CUBE_SIZE;
+    
+    var map = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    function FirstPersonCamera( camera ) {
+      this.camera = camera;
+      this.moveSpeed = 50;
+      
+      this.walk = function( d ) {
+        this.camera.position.x -= d * this.moveSpeed * Math.sin( this.camera.rotation.y );
+        this.camera.position.z -= d * this.moveSpeed * Math.cos( this.camera.rotation.y );
+      }
+
+      this.update = function( delta ) {
+      }
+    }
+      
+    window.onresize = function() {
+      // Making sure we only act after the renderer is created.
+      if( renderer ) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // When the window is resized we just need to recalculate the aspect ratio. 
+        camera.aspect = window.innerWidth / window.innerHeight
+      }
+    }
+    
+    window.onload = function() {
+      renderer = new THREE.WebGLRenderer();
+      renderer.setClearColorHex(0x0000, 1.0);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000.0);
+      fpsCamera = new FirstPersonCamera( camera );
+
+      controls = new THREE.FirstPersonControls( camera );
+      controls.movementSpeed = 100;
+      controls.lookSpeed = 0.125;
+      controls.lookVertical = false;
+      //controls.constrainVertical = true;
+      
+      clock = new THREE.Clock();
+
+      document.body.appendChild(renderer.domElement);
+      
+      stats = new Stats();
+      stats.getDomElement().style.position = "absolute";
+      stats.getDomElement().style.left = "0px";
+      stats.getDomElement().style.bottom = "0px";
+      document.body.appendChild(stats.getDomElement());
+
+      scene = new THREE.Scene();
+
+      cubeGeo  = new THREE.CubeGeometry(30, 30, 30);
+      var cubeTex = loadTexture( "texture.png" );              
+
+      cubeMeshes = new Array()
+      for( var row = 0; row < map.length; row++ ) {
+        for( var col = 0; col < map[row].length; col++ ) {
+          if( map[row][col] != 0 ) {
+            var mesh = new THREE.Mesh( cubeGeo, cubeTex );
+            mesh.position.z = row * CUBE_SIZE - MAP_HEIGHT / 2;
+            mesh.position.x = col * CUBE_SIZE - MAP_WIDTH / 2;
+            mesh.position.y = 0;
+            cubeMeshes.push(mesh);
+            scene.add( mesh );
+          }
+        }
+      }
+
+      scene.add( new THREE.AmbientLight(0xcccccc) );
+
+      light = new THREE.DirectionalLight(0xffffff);
+      light.position.x = 0;
+      light.position.y = 0;
+      light.position.z = 100;
+      light.position.normalize();
+      scene.add( light );      
+
+      lastTime = new Date().getTime();
+
+      document.addEventListener("keydown", keyDown, false);        
+      document.addEventListener("keyup", keyUp, false);        
+
+      loop();
+    }
+
+    function loadTexture( path ) {
+		  var image = new Image();
+			image.onload = function () { texture.needsUpdate = true; };
+			image.src = path;
+
+      var texture = new THREE.Texture( image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter );
+
+			return new THREE.MeshLambertMaterial( { map: texture, ambient: 0xbbbbbb } );
+		}
+
+    function keyDown( e ) {
+      keys[e.keyCode] = true;
+    }
+
+    function keyUp( e ) {
+      keys[e.keyCode] = false;
+    }
+    
+    function loop() {
+      requestAnimFrame(loop);
+      render( clock.getDelta() );
+    }
+
+    function render( delta ) {
+      //var delta = (new Date().getTime() - lastTime) / 1000;
+      //lastTime = new Date().getTime();
+    
+      stats.update();
+
+      controls.update( clock.getDelta() ); 
+
+      //if( keys[37] ) camera.rotation.y += 0.015;
+      //if( keys[39] ) camera.rotation.y -= 0.015;
+      //if( keys[38] ) fpsCamera.walk( 1 );
+      //if( keys[40] ) fpsCamera.walk( -1 );
+
+      renderer.render(scene, camera);
+    }
+  </script>
+</head>
+</html>
